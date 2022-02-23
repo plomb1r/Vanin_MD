@@ -38,20 +38,24 @@ vector<double> CalculationVectors() { //вычисление векторов и модулей rx12, ry12
     double r12_abs = 0.0;
     double r21_abs = 0.0;
     vector<double> resultVector;
-    rx12 = coordx[0] - coordx[1];
+    #pragma region Нахождение координат векторов rx12,rx21
+    rx12 = coordx[0] - coordx[1]; 
     ry12 = coordy[0] - coordy[1];
     rz12 = coordz[0] - coordz[1];
     rx21 = coordx[1] - coordx[0];
     ry21 = coordy[1] - coordy[0];
     rz21 = coordz[1] - coordz[0];
-    r12_abs = sqrt(rx12 * rx12 + ry12 * ry12 + rz12 * rz12);  //Длина вектора r12
-    r21_abs = sqrt(rx21 * rx21 + ry21 * ry21 + rz21 * rz21);  //Длина вектора r21
+    r12_abs = sqrt(rx12 * rx12 + ry12 * ry12 + rz12 * rz12);  //длина вектора r12
+    r21_abs = sqrt(rx21 * rx21 + ry21 * ry21 + rz21 * rz21);  //длина вектора r21
+    #pragma endregion
+
+    
     resultVector = { rx12, ry12, rz12, rx21, ry21, rz21, r12_abs, r21_abs }; //резултирующие данные по всем векторам
     return resultVector;
 
 }
 
-void PrintVectorsData(vector<double> v) {
+void PrintVectorsData(vector<double> v) { //запись в файл
     std::ofstream StreamOut;
     StreamOut.open("G:\\Vanin_MD_3.txt");
     if (StreamOut.is_open())
@@ -68,7 +72,7 @@ void PrintVectorsData(vector<double> v) {
     }
 
 }
-void MD() { //вызов функции Molecular Dynamics, в которой создается и декларируется экземпляр класса vector, вызывается функция н.у. для 2 частиц
+void MD() { //создание функции Molecular Dynamics, в которой создается и декларируется экземпляр класса vector, вызывается функция н.у. для 2 частиц
     vector<double> v;
     start_cond_two_particles();
     v = CalculationVectors(); //вызов метода подсчета данных для вектора
@@ -78,6 +82,7 @@ void MD() { //вызов функции Molecular Dynamics, в которой создается и декларируе
 
 int main()
 {
+    setlocale(LC_ALL, "Russian");
     MD();
     return 0;
 }
