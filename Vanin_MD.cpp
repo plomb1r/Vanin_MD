@@ -55,7 +55,7 @@ vector<double> CalculationVectors() { //вычисление векторов и
 
 }
 
-void PrintVectorsData(vector<double> v) { //запись в файл
+void PrintAndCalculateVectorsData(vector<double> v) { //запись в файл
 	std::ofstream StreamOut;
 	StreamOut.open("G:\\Vanin_MD_3.txt");
 	if (StreamOut.is_open())
@@ -72,13 +72,26 @@ void PrintVectorsData(vector<double> v) { //запись в файл
 	}
 
 }
+void freeMemory() {
+
+	free(coordx);
+	free(coordy);
+	free(coordz);
+	free(vx);
+	free(vy);
+	free(vz);
+}
+
 void MD() { //создание функции Molecular Dynamics, в которой создается и декларируется экземпляр класса vector, вызывается функция н.у. для 2 частиц
 	vector<double> v;
 	start_cond_two_particles();
 	v = CalculationVectors(); //вызов метода подсчета данных для вектора
-	PrintVectorsData(v);
+	PrintAndCalculateVectorsData(v);
 	//getStrings();
+	freeMemory();
 }
+
+
 
 int main()
 {
