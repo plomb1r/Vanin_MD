@@ -1,4 +1,4 @@
-#include <iostream>
+п»ї#include <iostream>
 #include <string>
 #include <fstream>
 #include "params.h"
@@ -28,7 +28,7 @@ void getStrings() {
 	}
 }
 
-vector<double> CalculationVectors() { //вычисление векторов и модулей rx12, ry12, rz12, rx21, ry21, rz21, r12_abs, r21_abs
+vector<double> CalculationVectors() { //РІС‹С‡РёСЃР»РµРЅРёРµ РІРµРєС‚РѕСЂРѕРІ Рё РјРѕРґСѓР»РµР№ rx12, ry12, rz12, rx21, ry21, rz21, r12_abs, r21_abs
 	double rx12 = 0.0;
 	double ry12 = 0.0;
 	double rz12 = 0.0;
@@ -38,24 +38,24 @@ vector<double> CalculationVectors() { //вычисление векторов и модулей rx12, ry12
 	double r12_abs = 0.0;
 	double r21_abs = 0.0;
 	vector<double> resultVector;
-#pragma region Нахождение координат векторов rx12,rx21
+#pragma region РќР°С…РѕР¶РґРµРЅРёРµ РєРѕРѕСЂРґРёРЅР°С‚ РІРµРєС‚РѕСЂРѕРІ rx12,rx21
 	rx12 = coordx[0] - coordx[1];
 	ry12 = coordy[0] - coordy[1];
 	rz12 = coordz[0] - coordz[1];
 	rx21 = coordx[1] - coordx[0];
 	ry21 = coordy[1] - coordy[0];
 	rz21 = coordz[1] - coordz[0];
-	r12_abs = sqrt(rx12 * rx12 + ry12 * ry12 + rz12 * rz12);  //длина вектора r12
-	r21_abs = sqrt(rx21 * rx21 + ry21 * ry21 + rz21 * rz21);  //длина вектора r21
+	r12_abs = sqrt(rx12 * rx12 + ry12 * ry12 + rz12 * rz12);  //РґР»РёРЅР° РІРµРєС‚РѕСЂР° r12
+	r21_abs = sqrt(rx21 * rx21 + ry21 * ry21 + rz21 * rz21);  //РґР»РёРЅР° РІРµРєС‚РѕСЂР° r21
 #pragma endregion
 
 
-	resultVector = { rx12, ry12, rz12, rx21, ry21, rz21, r12_abs, r21_abs }; //резултирующие данные по всем векторам
+	resultVector = { rx12, ry12, rz12, rx21, ry21, rz21, r12_abs, r21_abs }; //СЂРµР·СѓР»С‚РёСЂСѓСЋС‰РёРµ РґР°РЅРЅС‹Рµ РїРѕ РІСЃРµРј РІРµРєС‚РѕСЂР°Рј
 	return resultVector;
 
 }
 
-void PrintVectorsData(vector<double> v) { //запись в файл
+void PrintVectorsData(vector<double> v) { //Р·Р°РїРёСЃСЊ РІ С„Р°Р№Р»
 	std::ofstream StreamOut;
 	StreamOut.open("G:\\Vanin_MD_3.txt");
 	if (StreamOut.is_open())
@@ -72,10 +72,10 @@ void PrintVectorsData(vector<double> v) { //запись в файл
 	}
 
 }
-void MD() { //создание функции Molecular Dynamics, в которой создается и декларируется экземпляр класса vector, вызывается функция н.у. для 2 частиц
+void MD() { //СЃРѕР·РґР°РЅРёРµ С„СѓРЅРєС†РёРё Molecular Dynamics, РІ РєРѕС‚РѕСЂРѕР№ СЃРѕР·РґР°РµС‚СЃСЏ Рё РґРµРєР»Р°СЂРёСЂСѓРµС‚СЃСЏ СЌРєР·РµРјРїР»СЏСЂ РєР»Р°СЃСЃР° vector, РІС‹Р·С‹РІР°РµС‚СЃСЏ С„СѓРЅРєС†РёСЏ РЅ.Сѓ. РґР»СЏ 2 С‡Р°СЃС‚РёС†
 	vector<double> v;
 	start_cond_two_particles();
-	v = CalculationVectors(); //вызов метода подсчета данных для вектора
+	v = CalculationVectors(); //РІС‹Р·РѕРІ РјРµС‚РѕРґР° РїРѕРґСЃС‡РµС‚Р° РґР°РЅРЅС‹С… РґР»СЏ РІРµРєС‚РѕСЂР°
 	PrintVectorsData(v);
 	//getStrings();
 }
