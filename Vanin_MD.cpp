@@ -50,7 +50,7 @@ vector<double> CalculationVectors() { //вычисление векторов и
 #pragma endregion
 
 
-	resultVector = { rx12, ry12, rz12, rx21, ry21, rz21, r12_abs, r21_abs }; //резултирующие данные по всем векторам
+	resultVector = { rx12, ry12, rz12, rx21, ry21, rz21, r12_abs, r21_abs }; //результирующие данные по всем векторам
 	return resultVector;
 
 }
@@ -86,7 +86,6 @@ int main()
 	MD();
 	return 0;
 }
-
 
 
 
