@@ -1,11 +1,11 @@
-#pragma once
-#pragma region Кооординаты (массивы от числа частиц, где i - номер частицы)
+п»ї#pragma once
+#pragma region РљРѕРѕРѕСЂРґРёРЅР°С‚С‹ (РјР°СЃСЃРёРІС‹ РѕС‚ С‡РёСЃР»Р° С‡Р°СЃС‚РёС†, РіРґРµ i - РЅРѕРјРµСЂ С‡Р°СЃС‚РёС†С‹)
 double coordx[NUMBERPARTICLES];
 double coordy[NUMBERPARTICLES];
 double coordz[NUMBERPARTICLES];
 #pragma endregion
 
-#pragma region Скорости (массивы от числа частиц, где i - номер частицы)
+#pragma region РЎРєРѕСЂРѕСЃС‚Рё (РјР°СЃСЃРёРІС‹ РѕС‚ С‡РёСЃР»Р° С‡Р°СЃС‚РёС†, РіРґРµ i - РЅРѕРјРµСЂ С‡Р°СЃС‚РёС†С‹)
 
  double vx[NUMBERPARTICLES];
  double vy[NUMBERPARTICLES];
@@ -13,10 +13,10 @@ double coordz[NUMBERPARTICLES];
 
 #pragma endregion
 
-//const double U потенциальная энергия(скаляр)
+//const double U РїРѕС‚РµРЅС†РёР°Р»СЊРЅР°СЏ СЌРЅРµСЂРіРёСЏ(СЃРєР°Р»СЏСЂ)
 
 
-#pragma region Силы взаимодействия (массивы от числа частиц и вспомогательный скаляр)
+#pragma region РЎРёР»С‹ РІР·Р°РёРјРѕРґРµР№СЃС‚РІРёСЏ (РјР°СЃСЃРёРІС‹ РѕС‚ С‡РёСЃР»Р° С‡Р°СЃС‚РёС† Рё РІСЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Р№ СЃРєР°Р»СЏСЂ)
 
  double Fx[NUMBERPARTICLES];
  double Fy[NUMBERPARTICLES];
