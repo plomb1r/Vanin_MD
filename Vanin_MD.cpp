@@ -49,6 +49,7 @@ vector<double> CalculationVectors() { //вычисление векторов и
 	double U12 = 0.0;
 	double U21 = 0.0;
 	double F12 = 0.0;	
+	double F21 = 0.0;
 #pragma endregion
 	
 #pragma region Нахождение координат векторов rx12,rx21
@@ -73,12 +74,13 @@ vector<double> CalculationVectors() { //вычисление векторов и
 	U12 = 4 * EPS * (m12 - m6); //потенциал Леннарда-Джонса
 	U21 = 4 * EPS * (n12 - n6); //потенциал Леннарда-Джонса
 	F12 = ((24 * EPS) / r12_abs) * ((2 * m12) - (m6)); //сила взаимодействия 2 частицы на 1	
+	F21 = ((24 * EPS) / r21_abs) * ((2 * n12) - (n6));
 	Fx[0] = (F12 * rx12) / r12_abs;
-	Fx[1] = (F12 * rx21) / r21_abs;
+	Fx[1] = (F21 * rx21) / r21_abs;
 	Fy[0] = (F12 * ry12) / r12_abs;
-	Fy[1] = (F12 * ry21) / r21_abs;
+	Fy[1] = (F21 * ry21) / r21_abs;
 	Fz[0] = (F12 * rz12) / r12_abs;
-	Fz[1] = (F12 * rz21) / r21_abs;
+	Fz[1] = (F21 * rz21) / r21_abs;
 	
 	
 #pragma endregion
