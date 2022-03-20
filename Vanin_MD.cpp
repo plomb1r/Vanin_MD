@@ -163,16 +163,16 @@ void fileWrite(int iter = 0) {
 	else 
 	{
 		fprintf(filew, "Step = %d\n", iter);
-		fprintf(filew, "r1 = (rx1; ry1; rz1) = (%1.8f; %1.8f; %1.8f) \n", coordx[0], coordy[0], coordz[0]);
-		fprintf(filew, "r2 = (rx2; ry2; rz2) = (%1.8f; %1.8f; %1.8f) \n", coordx[1], coordy[1], coordz[1]);
-		fprintf(filew, "r12 = (rx12; ry12; rz12) = (%1.8f; %1.8f; %1.8f) \n", rx12, ry12, rz12);
+		fprintf(filew, "r1 = (rx1; ry1; rz1) = (%1.8f; %1.8f; %1.8f) \n", coordx[0] + 0.0, coordy[0] + 0.0, coordz[0] + 0.0);
+		fprintf(filew, "r2 = (rx2; ry2; rz2) = (%1.8f; %1.8f; %1.8f) \n", coordx[1] + 0.0, coordy[1] + 0.0, coordz[1] + 0.0);
+		fprintf(filew, "r12 = (rx12; ry12; rz12) = (%1.8f; %1.8f; %1.8f) \n", rx12 + 0.0, ry12 + 0.0, rz12 + 0.0);
 		fprintf(filew, "r12_abs = %1.8f \n", r12_abs);
-		fprintf(filew, "(rx12; ry12; rz12)/r12_abs = (%1.8f; %1.8f; %1.8f) \n", rx12 / r12_abs, ry12 / r12_abs, rz12 / r12_abs);
+		fprintf(filew, "(rx12; ry12; rz12)/r12_abs = (%1.8f; %1.8f; %1.8f) \n", rx12 / r12_abs + 0.0, ry12 / r12_abs + 0.0, rz12 / r12_abs + 0.0);
 		fprintf(filew, "U12 = %1.8f \n", U12); 
 		fprintf(filew, "F12 = %1.8f \n", F12);
-		fprintf(filew, "F1 = (Fx1; Fy1; Fz1) = (% 1.8f; % 1.8f; % 1.8f) \n", Fx[0], Fy[0], Fz[0]);
-		fprintf(filew, "v1 = (vx1; vy1; vz1) = (% 1.8f; % 1.8f; % 1.8f) \n", vx[0], vy[0], vz[0]);
-		fprintf(filew, "v2 = (vx2; vy2; vz2) = (% 1.8f; % 1.8f; % 1.8f) \n", vx[1], vy[1], vz[1]);
+		fprintf(filew, "F1 = (Fx1; Fy1; Fz1) = (% 1.8f; % 1.8f; % 1.8f) \n", Fx[0] + 0.0, Fy[0] + 0.0, Fz[0] + 0.0);
+		fprintf(filew, "v1 = (vx1; vy1; vz1) = (% 1.8f; % 1.8f; % 1.8f) \n", vx[0] + 0.0, vy[0] + 0.0, vz[0] + 0.0);
+		fprintf(filew, "v2 = (vx2; vy2; vz2) = (% 1.8f; % 1.8f; % 1.8f) \n", vx[1] + 0.0, vy[1] + 0.0, vz[1] + 0.0);
 		fprintf(filew, "\n");
 	}
 	fclose(filew);
