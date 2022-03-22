@@ -155,7 +155,7 @@ void CalculationVectors() { //вычисление векторов и моду�
 void fileWrite(int iter = 0) { 
 	FILE* filew;
 	errno_t error;
-	error = fopen_s(&filew, "D:\\Vanin_MD_7.txt", "a");
+	error = fopen_s(&filew, "D:\\Vanin_MD_8.txt", "a");
 	if (error != 0) 
 	{
 		std::cout << "Error:" + error << std::endl;
