@@ -54,6 +54,7 @@ double F12 = 0.0;
 double F21 = 0.0;
 #pragma endregion
 
+
 void CalculationVectors() { //вычисление векторов и модулей rx12, ry12, rz12, rx21, ry21, rz21, r12_abs, r21_abs, потценциала и сил взаимодействия	
 #pragma region Создание массивов под предыдущие значения для вычисления разностной схемы Верле
 	double Fx_pre[NUMBERPARTICLES];
@@ -79,13 +80,13 @@ void CalculationVectors() { //вычисление векторов и моду�
 	m2 = m * m;
 	m4 = m2 * m2;
 	m6 = m4 * m2;
-	m12 = m6 * m6;  
+	m12 = m6 * m6;
 	n = (SIGMA / r21_abs);
 	n2 = n * n;
 	n4 = n2 * n2;
 	n6 = n4 * n2;
 	n12 = n6 * n6;
-	U12 = 4 * EPS * (m12 - m6); 
+	U12 = 4 * EPS * (m12 - m6);
 	U21 = 4 * EPS * (n12 - n6); //потенциал Леннарда-Джонса
 	F12 = (24 * EPS / r12_abs) * (2 * m12 - m6); //сила взаимодействия 2 частицы на 1	
 	F21 = (24 * EPS / r21_abs) * (2 * n12 - n6);
@@ -99,7 +100,7 @@ void CalculationVectors() { //вычисление векторов и моду�
 	fileWrite(0);
 
 	//считаем схему Верле
-	for (int i = 1; i < NSTEPS; i++) 
+	for (int i = 1; i < NSTEPS; i++)
 	{
 		Fx_pre[0] = Fx[0];
 		Fx_pre[1] = Fx[1];
@@ -107,12 +108,34 @@ void CalculationVectors() { //вычисление векторов и моду�
 		Fy_pre[1] = Fy[1];
 		Fz_pre[0] = Fz[0];
 		Fz_pre[1] = Fz[1];
-		coordx[0] = coordx[0] + vx[0] * STEP + Fx[0] * STEP * STEP / (2 * MASS);
-		coordy[0] = coordy[0] + vy[0] * STEP + Fy[0] * STEP * STEP / (2 * MASS);
-		coordz[0] = coordz[0] + vz[0] * STEP + Fz[0] * STEP * STEP / (2 * MASS);
-		coordx[1] = coordx[1] + vx[1] * STEP + Fx[1] * STEP * STEP / (2 * MASS);
-		coordy[1] = coordy[1] + vy[1] * STEP + Fy[1] * STEP * STEP / (2 * MASS);
-		coordz[1] = coordz[1] + vz[1] * STEP + Fz[1] * STEP * STEP / (2 * MASS);
+		for (int i = 0; i < NUMBERPARTICLES; ++i) {
+			coordx[i] += vx[i] * STEP + Fx[i] / (2 * MASS) * (STEP * STEP);
+			coordy[i] += vy[i] * STEP + Fy[i] / (2 * MASS) * (STEP * STEP);
+			coordz[i] += vz[i] * STEP + Fz[i] / (2 * MASS) * (STEP * STEP);
+		}
+		//учет ПГУ
+		for (int i = 0; i < NUMBERPARTICLES; ++i) {
+			if (coordx[i] >= LX) {
+				coordx[i] -= LX;
+			}
+			if (coordy[i] >= LY) {
+				coordy[i] -= LY;
+			}
+			if (coordz[i] >= LZ) {
+				coordz[i] -= LZ;
+			}
+
+			if (coordx[i] < 0) {
+				coordx[i] += LX;
+			}
+			if (coordy[i] < 0) {
+				coordy[i] += LY;
+			}
+
+			if (coordz[i] < 0) {
+				coordz[i] += LZ;
+			}
+		}
 		rx12 = coordx[0] - coordx[1];
 		ry12 = coordy[0] - coordy[1];
 		rz12 = coordz[0] - coordz[1];
@@ -125,7 +148,7 @@ void CalculationVectors() { //вычисление векторов и моду�
 		m2 = m * m;
 		m4 = m2 * m2;
 		m6 = m4 * m2;
-		m12 = m6 * m6; 
+		m12 = m6 * m6;
 		n = (SIGMA / r21_abs);
 		n2 = n * n;
 		n4 = n2 * n2;
@@ -135,7 +158,7 @@ void CalculationVectors() { //вычисление векторов и моду�
 		U21 = 4 * EPS * (n12 - n6);
 		F12 = ((24 * EPS) / r12_abs) * ((2 * m12) - (m6));
 		F21 = ((24 * EPS) / r21_abs) * ((2 * n12) - (n6));
-		Fx[0] = F12 * rx12 / r12_abs; 
+		Fx[0] = F12 * rx12 / r12_abs;
 		Fy[0] = F12 * ry12 / r12_abs;
 		Fz[0] = F12 * rz12 / r12_abs;
 		Fx[1] = F21 * rx21 / r21_abs;
@@ -152,23 +175,21 @@ void CalculationVectors() { //вычисление векторов и моду�
 #pragma endregion	
 }
 
-void fileWrite(int iter = 0) { 
+void fileWrite(int iter = 0) {
 	FILE* filew;
 	errno_t error;
-	error = fopen_s(&filew, "D:\\Vanin_MD_8.txt", "a");
-	if (error != 0) 
+	error = fopen_s(&filew, "G:\\Vanin_MD_9.txt", "a");
+	if (error != 0)
 	{
 		std::cout << "Error:" + error << std::endl;
 	}
-	else 
+	else
 	{
 		fprintf(filew, "Step = %d\n", iter);
 		fprintf(filew, "r1 = (rx1; ry1; rz1) = (%1.8f; %1.8f; %1.8f) \n", coordx[0] + 0.0, coordy[0] + 0.0, coordz[0] + 0.0);
 		fprintf(filew, "r2 = (rx2; ry2; rz2) = (%1.8f; %1.8f; %1.8f) \n", coordx[1] + 0.0, coordy[1] + 0.0, coordz[1] + 0.0);
-		fprintf(filew, "r12 = (rx12; ry12; rz12) = (%1.8f; %1.8f; %1.8f) \n", rx12 + 0.0, ry12 + 0.0, rz12 + 0.0);
 		fprintf(filew, "r12_abs = %1.8f \n", r12_abs);
-		fprintf(filew, "(rx12; ry12; rz12)/r12_abs = (%1.8f; %1.8f; %1.8f) \n", rx12 / r12_abs + 0.0, ry12 / r12_abs + 0.0, rz12 / r12_abs + 0.0);
-		fprintf(filew, "U12 = %1.8f \n", U12); 
+		fprintf(filew, "U12 = %1.8f \n", U12);
 		fprintf(filew, "F12 = %1.8f \n", F12);
 		fprintf(filew, "F1 = (Fx1; Fy1; Fz1) = (% 1.8f; % 1.8f; % 1.8f) \n", Fx[0] + 0.0, Fy[0] + 0.0, Fz[0] + 0.0);
 		fprintf(filew, "v1 = (vx1; vy1; vz1) = (% 1.8f; % 1.8f; % 1.8f) \n", vx[0] + 0.0, vy[0] + 0.0, vz[0] + 0.0);
@@ -191,8 +212,8 @@ void freeMemory() { //освобождаем память
 }
 
 void MD() { //создание функции Molecular Dynamics, в которой создается и декларируется экземпляр класса vector, вызывается функция н.у. для 2 частиц, а также проивзодятся манипуляции с памятью	
-	GetMemoryForArrays();	
-	start_cond_two_particles();	
+	GetMemoryForArrays();
+	start_cond_two_particles();
 	CalculationVectors();
 	ClearMemory();
 }
@@ -203,6 +224,3 @@ int main()
 	MD();
 	return 0;
 }
-
-
-
