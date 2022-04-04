@@ -1,12 +1,12 @@
 ﻿#pragma once
 //params.h - параметры (константы), значения которых можем менять от запуска к запуску
-const int NSTEPS = 4; //число шагов
+const int NSTEPS = 2000; //число шагов
 const int LASTSTEP = NSTEPS - 1; //последний шаг
 
 #pragma region Число элементарных ячеек (кристаллов) по осям координат
-const int NUMCRIST_X = 4; 
-const int NUMCRIST_Y = 4;
-const int NUMCRIST_Z = 4;
+const int NUMCRIST_X = 1; 
+const int NUMCRIST_Y = 1;
+const int NUMCRIST_Z = 1;
 #pragma endregion
 
 //число частиц для примитивной решетки с учетом ПГУ
