@@ -22,4 +22,13 @@ double* Fz;
  
 #pragma endregion
 double F;
+#pragma region Макропараметры
+double* Ekin;
+double Ekin_sys;
+double Eterm;
+double Eint;
+double E;
+double Epot;
+double T;
+double P;
  ;
