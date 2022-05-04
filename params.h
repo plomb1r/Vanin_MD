@@ -14,10 +14,4 @@ const int NUMCRIST_Z = 1;
 //NUMBERPARTICLES = ;
 const int NUMBERPARTICLES = 2;
 const double STEP = 0.002 // шаг интегрирования разностной схемы
-
-#pragma region Пояснения
-/*ACRIST - длина ребра элементарной ячейки, зависит от термодинамического состояни и модели
-* ПГУ - периодиечские граничные условия
-*/
-#pragma endregion
 ;
