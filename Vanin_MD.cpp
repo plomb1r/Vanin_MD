@@ -8,6 +8,7 @@
 #include "start_cond.h"
 
 
+
 void getMemoryForArrays() { //освобождаем память
 	coordx = (double*)malloc(NUMBERPARTICLES * sizeof(double));
 	coordy = (double*)malloc(NUMBERPARTICLES * sizeof(double));
@@ -70,25 +71,36 @@ void LJpotentional() { //высчитываем потценил Л-Джонса
 		Fx[i] = 0;
 		Fy[i] = 0;
 		Fz[i] = 0; //обнуляем значения сил
-#pragma region Виртуальные частицы
+#pragma region Виртуальные частицы Lx/2
 		for (int j = 0; j < NUMBERPARTICLES; ++j) {
-			for (int dx = -1; dx <= 1; ++dx) {
-				for (int dy = -1; dy <= 1; ++dy) {
-					for (int dz = -1; dz <= 1; ++dz) {
-						if (i == j && dx == 0 && dy == 0 && dz == 0)
-							continue;
-						double r_ij[] = { coordx[i] - (coordx[j] + dx * LX), coordy[i] - (coordy[j] + dy * LY), coordz[i] - (coordz[j] + dz * LY) };
-						double r_ij_abs = sqrtRecursive(r_ij[0], r_ij[1], r_ij[2]);
-						double F_ij = F(r_ij_abs);
-						Fx[i] += F_ij * r_ij[0] / r_ij_abs;
-						Fy[i] += F_ij * r_ij[1] / r_ij_abs;
-						Fz[i] += F_ij * r_ij[2] / r_ij_abs;
-					}
-				}
+			if (i == j) continue;
+			double r_ij[] = { coordx[i] - coordx[j], coordy[i] - coordy[j], coordz[i] - coordz[j] };
+			if (r_ij[0] < -LX / 2) {
+				r_ij[0] += LX;
+			} 
+			if (r_ij[0] >= LX / 2) {
+				r_ij[0] -= LX;
+			} 
+			if (r_ij[1] < -LY / 2) {
+				r_ij[1] += LY;
+			} 
+			if (r_ij[1] >= LY / 2) {
+				r_ij[1] -= LY;
+			} 
+			if (r_ij[2] < -LZ / 2) {
+				r_ij[2] += LZ;
+			} 
+			if (r_ij[2] >= LZ / 2) {
+				r_ij[2] -= LZ;
 			}
+			double r_ij_square = recursive(r_ij[0], r_ij[1], r_ij[2]);
+			double F_ij = F(r_ij_square);
+			Fx[i] += F_ij * r_ij[0] / r_ij_square;
+			Fy[i] += F_ij * r_ij[1] / r_ij_square;
+			Fz[i] += F_ij * r_ij[2] / r_ij_square;
 		}
-#pragma endregion	
 	}
+#pragma endregion	
 }
 
 void start_cond_two_particles();
@@ -176,7 +188,7 @@ void writeToFile(FILE* outStream, int iter) {
 	double U12 = U(r12_abs);
 	fprintf(outStream, "U12 = %.8f\n", U12);
 	double F12 = F(r12_abs);
-	fprintf(outStream, "F12 = %.8f\n", F12+0.0);
+	fprintf(outStream, "F12 = %.8f\n", F12);
 	for (int i = 0; i < 1; ++i) {
 		fprintf(outStream, "F%d = (Fx%d; Fy%d; Fz%d) = (%.8f; %.8f; %.8f)\n", i + 1, i + 1, i + 1, i + 1, Fx[i], Fy[i], Fz[i]);
 	}
@@ -186,12 +198,35 @@ void writeToFile(FILE* outStream, int iter) {
 	fprintf(outStream, "\n"); 
 }
 
+void PBC() {
+	for (int i = 0; i < NUMBERPARTICLES; ++i) {
+		if (coordx[i] >= LX) {
+			coordx[i] -= LX;
+		}
+		if (coordy[i] >= LY) {
+			coordy[i] -= LY;
+		}
+		if (coordz[i] >= LZ) {
+			coordz[i] -= LZ;
+		}
+		if (coordx[i] < 0) {
+			coordx[i] += LX;
+		}
+		if (coordy[i] < 0) {
+			coordy[i] += LY;
+		}
+		if (coordz[i] < 0) {
+			coordz[i] += LZ;
+		}
+	}
+}
 void verletAlgorithm() {
 	for (int i = 0; i < NUMBERPARTICLES; ++i) { 
 		coordx[i] += vx[i] * STEP + Fx[i] / (2 * MASS) * (STEP * STEP);
 		coordy[i] += vy[i] * STEP + Fy[i] / (2 * MASS) * (STEP * STEP);
 		coordz[i] += vz[i] * STEP + Fz[i] / (2 * MASS) * (STEP * STEP);
 	}
+	PBC();
 	for (int i = 0; i < NUMBERPARTICLES; ++i) { 
 		vx[i] += Fx[i] / (2 * MASS) * STEP;
 		vy[i] += Fy[i] / (2 * MASS) * STEP;
@@ -205,44 +240,23 @@ void verletAlgorithm() {
 	}
 }
 
-void PGU() {
-	for (int i = 0; i < NUMBERPARTICLES; ++i) {
-		if (coordx[i] >= LX) {
-			coordx[i] -= LX;
-		}
-		if (coordy[i] >= LY) {
-			coordy[i] -= LY;
-		} 
-		if (coordz[i] >= LZ) {
-			coordz[i] -= LZ;
-		}
-		if (coordx[i] < 0) {
-			coordx[i] += LX;
-		} 
-		if (coordy[i] < 0) {
-			coordy[i] += LY;
-		} 
-		if (coordz[i] < 0) {
-			coordz[i] += LZ;
-		} 
-	}
-}
+
 
 void MD() {
 	getMemoryForArrays();
 	FILE* outStream;
-	char FileName[] = "G:\\Vanin_MD_12.txt";
+	char FileName[] = "G:\\Vanin_MD_13.txt";
 	outStream = fopen(FileName, "w");
-		start_cond_two_particles(); 
-		LJpotentional(); 
-		writeToFile(outStream, 0);
-		for (int step = 1; step <= LASTSTEP; ++step) {
-			verletAlgorithm();
-			writeToFile(outStream, step);
-		}
-		fclose(outStream);
-		LJpotentional(); 
-		clearMemory(); 
+	start_cond_two_particles(); 
+	LJpotentional(); 
+	writeToFile(outStream, 0);
+	for (int step = 1; step <= LASTSTEP; ++step) {
+		verletAlgorithm();
+		writeToFile(outStream, step);
+	}
+	fclose(outStream);
+	LJpotentional(); 
+	clearMemory(); 
 
 }
 
