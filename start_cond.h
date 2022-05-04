@@ -1,15 +1,23 @@
 ﻿#pragma once
-//Задание начальных условий для системы двух частиц
 void start_cond_two_particles() {
-
-    coordx[0] = 0.75; coordy[0] = 0.75; coordz[0] = 0.5; //координаты первого вектора
-    coordx[1] = 1.25; coordy[1] = 0.75; coordz[1] = 0.5; //координаты второго вектора
-
-    vx[0] = 1.0;  vy[0] = 1.0; vz[0] = 0.0; //координаты первого вектора скорости
-    vx[1] = -1.0; vy[1] = 1.0; vz[1] = 0.0; //координаты второго вектора скорости
-     
-}
-;
-
-
-
+	const double r_vec_1[] = { 0.75, 0.75, 0.5 };
+	const double r_vec_2[] = { 1.25, 0.75, 0.5 };
+	const double v_vec_1[] = { 1.0, 1.0, 0.0 };
+	const double v_vec_2[] = { -1.0, 1.0, 0.0 };
+#pragma region Инициализация НУ для координат
+	coordx[0] = r_vec_1[0];
+	coordy[0] = r_vec_1[1];
+	coordz[0] = r_vec_1[2];
+	coordx[1] = r_vec_2[0];
+	coordy[1] = r_vec_2[1];
+	coordz[1] = r_vec_2[2];
+#pragma endregion
+#pragma region Инициализация НУ для скоростей
+	vx[0] = v_vec_1[0];
+	vy[0] = v_vec_1[1];
+	vz[0] = v_vec_1[2];
+	vx[1] = v_vec_2[0];
+	vy[1] = v_vec_2[1];
+	vz[1] = v_vec_2[2];
+#pragma endregion
+};

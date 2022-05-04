@@ -1,34 +1,12 @@
 ﻿#pragma once
-#pragma region Кооординаты (массивы от числа частиц, где i - номер частицы)
-double* coordx; 
+double* coordx;
 double* coordy;
 double* coordz;
-#pragma endregion
-
-#pragma region Скорости (массивы от числа частиц, где i - номер частицы)
-double* vx;	 
-double* vy;
+double* vx;
+double* vy; 
 double* vz;
-#pragma endregion
-
-#pragma region Потенциал Леннарда-Джонса
-double U;
-#pragma endregion
-
-#pragma region Силы взаимодействия (массивы от числа частиц и вспомогательный скаляр)
-double* Fx; 
+double* Fx;
 double* Fy;
 double* Fz;
- 
-#pragma endregion
-double F;
-#pragma region Макропараметры
-double* Ekin;
-double Ekin_sys;
-double Eterm;
-double Eint;
-double E;
-double Epot;
-double T;
-double P;
- ;
+double F(double r);
+double U(double r);

@@ -1,20 +1,14 @@
-﻿#include <iostream>
-#include <string>
-#include <fstream>
+﻿#include <stdio.h> 
+#define _CRT_SECURE_NO_DEPRECATE //для безопасного открытия потоков
+#include <math.h>  
+#include <stdlib.h> 
 #include "params.h"
 #include "constants.h"
 #include "global_var.h"
 #include "start_cond.h"
-#include <iomanip>
-#include <math.h>
-#include <stdlib.h>
-#include <vector>
-using std::vector;
-using std::string;
 
-void fileWrite(int);
 
-void GetMemoryForArrays() { //выделяем память
+void getMemoryForArrays() { //освобождаем память
 	coordx = (double*)malloc(NUMBERPARTICLES * sizeof(double));
 	coordy = (double*)malloc(NUMBERPARTICLES * sizeof(double));
 	coordz = (double*)malloc(NUMBERPARTICLES * sizeof(double));
@@ -24,368 +18,235 @@ void GetMemoryForArrays() { //выделяем память
 	Fx = (double*)malloc(NUMBERPARTICLES * sizeof(double));
 	Fy = (double*)malloc(NUMBERPARTICLES * sizeof(double));
 	Fz = (double*)malloc(NUMBERPARTICLES * sizeof(double));
-	Ekin = (double*)malloc(NUMBERPARTICLES * sizeof(double));
+	for (int i = 0; i < NUMBERPARTICLES; ++i) {	//обнулим заодно силы, координаты и скорости
+		coordx[i] = 0;
+		coordy[i] = 0;
+		coordz[i] = 0;
+		vx[i] = 0;
+		vy[i] = 0;
+		vz[i] = 0;
+		Fx[i] = 0;
+		Fy[i] = 0;
+		Fz[i] = 0;
+	}
 }
 
-void ClearMemory() { //освобождаем память
-	free(coordx);
+void clearMemory() { //освобождаем память
+	free(coordx); 
 	free(coordy);
 	free(coordz);
-	free(vx);
-	free(vy);
+	free(vx); 
+	free(vy); 
 	free(vz);
 	free(Fx);
-	free(Fy);
+	free(Fy); 
 	free(Fz);
 }
-#pragma region Декларирование переменных, участвующих в расчетах потцениала и сил взаимодействия и макропараметров
-double rx12 = 0.0;
-double ry12 = 0.0;
-double rz12 = 0.0;
-double rx21 = 0.0;
-double ry21 = 0.0;
-double rz21 = 0.0;
-double r12_abs = 0.0;
-double r21_abs = 0.0;
-double m, m2, m4, m6, m12 = 0.0;
-double n, n2, n4, n6, n12 = 0.0;
-double U12 = 0.0;
-double U21 = 0.0;
-double F12 = 0.0;
-double F21 = 0.0;
-double vm_x, vm_y, vm_z;
-#pragma endregion
+
+
+double U(double r) { //можно было бы выводить через pow(), но выбрали удовенное умножение
+	double u2 = (SIGMA * SIGMA) / (r * r);
+	double u6 = u2 * u2 * u2;
+	return 4 * EPS * (u6 * u6 - u6);
+}
+
+double F(double r) {
+	double f2 = (SIGMA * SIGMA) / (r * r);
+	double f6 = f2 * f2 * f2;
+	return 24 * EPS / r * (2 * f6 * f6 - f6);
+}
+
 double recursive(double x, double y, double z) {
 	return x * x + y * y + z * z;
 }
-double Pressure()
-// computes pressure of the system
-{
-	// computes v_mean
-	double v_mean[] = { 0, 0, 0 };
-	for (int i = 0; i < NUMBERPARTICLES; ++i)
-	{
-		v_mean[0] += vx[i];
-		v_mean[1] += vy[i];
-		v_mean[2] += vz[i];
-	}
 
-	v_mean[0] /= NUMBERPARTICLES;
-	v_mean[1] /= NUMBERPARTICLES;
-	v_mean[2] /= NUMBERPARTICLES;
-
-	// computes P
-	double P = 0;
-	for (int i = 0; i < NUMBERPARTICLES; ++i)
-	{
-		P += MASS * recursive(vx[i] - v_mean[0], vy[i] - v_mean[1], vz[i] - v_mean[2]);
-		for (int j = i + 1; j < NUMBERPARTICLES; ++j)
-		{
-			double r_ij[] = { coordx[i] - coordx[j], coordy[i] - coordy[j], coordz[i] - coordz[j] };
-			double r_ij_abs = sqrt(recursive(r_ij[0], r_ij[1], r_ij[2]));
-			double F_ij = F12;
-			for (int alpha = 0; alpha < 3; ++alpha)
-			{
-				double F_ij_alpha = F_ij * r_ij[alpha] / r_ij_abs;
-				P += r_ij[alpha] * F_ij_alpha;
-			}
-		}
-	}
-	P = P / (3 * VOLUME);
-	return P;
+double sqrtRecursive(double x, double y, double z) {
+	return sqrt(recursive(x, y, z));
 }
-double E_thermal()
-// computes thermal energy of the system
-{
-	double v_mean[] = { 0, 0, 0 };
-	for (int i = 0; i < NUMBERPARTICLES; ++i)
-	{
-		v_mean[0] += vx[i];
-		v_mean[1] += vy[i];
-		v_mean[2] += vz[i];
-	}
 
-	v_mean[0] /= NUMBERPARTICLES;
-	v_mean[1] /= NUMBERPARTICLES;
-	v_mean[2] /= NUMBERPARTICLES;
 
-	double E_term = 0;
-	for (int i = 0; i < NUMBERPARTICLES; ++i)
-	{
-		E_term += recursive(vx[i] - v_mean[0], vy[i] - v_mean[1], vz[i] - v_mean[2]);
-	}
-
-	E_term = E_term * MASS / 2;
-	return E_term;
-}
-void CalculationVectors() { //вычисление векторов и модулей rx12, ry12, rz12, rx21, ry21, rz21, r12_abs, r21_abs, потценциала и сил взаимодействия	
-#pragma region Создание массивов под предыдущие значения для вычисления разностной схемы Верле
-	double Fx_pre[NUMBERPARTICLES];
-	double Fy_pre[NUMBERPARTICLES];
-	double Fz_pre[NUMBERPARTICLES];
-#pragma endregion
-	double Pxx, Pyy, Pzz, mv2_x, mv2_y, mv2_z, rF_x, rF_y, rF_z;
-	double v_T;
-#pragma region Нахождение координат векторов rx12,rx21
-	rx12 = coordx[0] - coordx[1];
-	ry12 = coordy[0] - coordy[1];
-	rz12 = coordz[0] - coordz[1];
-	rx21 = coordx[1] - coordx[0];
-	ry21 = coordy[1] - coordy[0];
-	rz21 = coordz[1] - coordz[0];
-	r12_abs = sqrt(rx12 * rx12 + ry12 * ry12 + rz12 * rz12);  //модуль вектора r12
-	r21_abs = sqrt(rx21 * rx21 + ry21 * ry21 + rz21 * rz21);  //модуль вектора r21
-#pragma endregion
-
-#pragma region Рассчет сил взаимодействия и потенциалов
-	//(можно воспользоваться pow(), но было решено менять на * при кратности 2)
-	//на 0 шаге фиксируем значения
-	m = (SIGMA / r12_abs);
-	m2 = m * m;
-	m4 = m2 * m2;
-	m6 = m4 * m2;
-	m12 = m6 * m6;
-	n = (SIGMA / r21_abs);
-	n2 = n * n;
-	n4 = n2 * n2;
-	n6 = n4 * n2;
-	n12 = n6 * n6;
-	U12 = 4 * EPS * (m12 - m6);
-	U21 = 4 * EPS * (n12 - n6); //потенциал Леннарда-Джонса
-	F12 = (24 * EPS / r12_abs) * (2 * m12 - m6); //сила взаимодействия 2 частицы на 1	
-	F21 = (24 * EPS / r21_abs) * (2 * n12 - n6);
-	Fx[0] = (F12 * rx12) / r12_abs;
-	Fx[1] = (F21 * rx21) / r21_abs;
-	Fy[0] = (F12 * ry12) / r12_abs;
-	Fy[1] = (F21 * ry21) / r21_abs;
-	Fz[0] = (F12 * rz12) / r12_abs;
-	Fz[1] = (F21 * rz21) / r21_abs;
-
-	Ekin_sys = 0;
-	for (int i = 0; i < NUMBERPARTICLES; i++) {
-		Ekin[i] = MASS * (pow(vx[i], 2) + pow(vy[i], 2) + pow(vz[i], 2)) / 2;
-		Ekin_sys += Ekin[i];
-	}
-	double v_mean[] = { 0, 0, 0 };
-	for (int i = 0; i < NUMBERPARTICLES; ++i)
-	{
-		v_mean[0] += vx[i];
-		v_mean[1] += vy[i];
-		v_mean[2] += vz[i];
-	}
-
-	v_mean[0] /= NUMBERPARTICLES;
-	v_mean[1] /= NUMBERPARTICLES;
-	v_mean[2] /= NUMBERPARTICLES;
-
-	double Eterm = 0.0;
-	for (int i = 0; i < NUMBERPARTICLES; ++i)
-	{
-		Eterm += recursive(vx[i] - v_mean[0], vy[i] - v_mean[1], vz[i] - v_mean[2]);
-	}
-
-	Eterm = Eterm * MASS / 2;
-	Epot = (U12 + U21) / 2;
-	Eint = Epot + Eterm;
-	E = Ekin_sys + Epot;
-	for (int i = 0; i < NUMBERPARTICLES; i++) {
-		vm_x = 0;
-		vm_y = 0;
-		vm_z = 0;
-	}
-	for (int i = 0; i < NUMBERPARTICLES; i++) {
-		vm_x += vx[i];
-		vm_y += vy[i];
-		vm_z += vz[i];
-	}
-	vm_x /= NUMBERPARTICLES;
-	vm_y /= NUMBERPARTICLES;
-	vm_z /= NUMBERPARTICLES;
-
-	v_T = 0;
-	for (int i = 0; i < NUMBERPARTICLES; i++) {
-		v_T += pow(vx[i] - vm_x, 2) + pow(vy[i] - vm_y, 2) + pow(vz[i] - vm_z, 2);
-		T = MASS * v_T / (3 * NUMBERPARTICLES * K_B);
-	}
-
-	/*mv2_x = 0;
-	mv2_y = 0;
-	mv2_z = 0;
-	for (int i = 0; i < NUMBERPARTICLES; i++) {	
-		mv2_x += MASS * pow(vx[i] - vm_x, 2);
-		mv2_y += MASS * pow(vy[i] - vm_y, 2);
-		mv2_z += MASS * pow(vz[i] - vm_z, 2);
-	}
-	rF_x = rx12 * Fx[0];	
-	rF_y = ry12 * Fy[0];
-	rF_z = rz12 * Fz[0];
-
-	Pxx = (1 / VOLUME) * (mv2_x + rF_x);
-	Pyy = (1 / VOLUME) * (mv2_y + rF_y);
-	Pzz = (1 / VOLUME) * (mv2_z + rF_z);
-
-	P = (Pxx + Pyy + Pzz) / 3;*/
-	fileWrite(0);
-
-	//считаем схему Верле
-	for (int i = 1; i < NSTEPS; i++)
-	{
-		Fx_pre[0] = Fx[0];
-		Fx_pre[1] = Fx[1];
-		Fy_pre[0] = Fy[0];
-		Fy_pre[1] = Fy[1];
-		Fz_pre[0] = Fz[0];
-		Fz_pre[1] = Fz[1];
-		for (int i = 0; i < NUMBERPARTICLES; ++i) {
-			coordx[i] += vx[i] * STEP + Fx[i] / (2 * MASS) * (STEP * STEP);
-			coordy[i] += vy[i] * STEP + Fy[i] / (2 * MASS) * (STEP * STEP);
-			coordz[i] += vz[i] * STEP + Fz[i] / (2 * MASS) * (STEP * STEP);
-		}
-		//учет ПГУ
-		for (int i = 0; i < NUMBERPARTICLES; ++i) {
-			if (coordx[i] >= LX) {
-				coordx[i] -= LX;
-			}
-			if (coordy[i] >= LY) {
-				coordy[i] -= LY;
-			}
-			if (coordz[i] >= LZ) {
-				coordz[i] -= LZ;
-			}
-
-			if (coordx[i] < 0) {
-				coordx[i] += LX;
-			}
-			if (coordy[i] < 0) {
-				coordy[i] += LY;
-			}
-
-			if (coordz[i] < 0) {
-				coordz[i] += LZ;
+void LJpotentional() { //высчитываем потценил Л-Джонса
+	for (int i = 0; i < NUMBERPARTICLES; ++i) {
+		Fx[i] = 0;
+		Fy[i] = 0;
+		Fz[i] = 0; //обнуляем значения сил
+#pragma region Виртуальные частицы
+		for (int j = 0; j < NUMBERPARTICLES; ++j) {
+			for (int dx = -1; dx <= 1; ++dx) {
+				for (int dy = -1; dy <= 1; ++dy) {
+					for (int dz = -1; dz <= 1; ++dz) {
+						if (i == j && dx == 0 && dy == 0 && dz == 0)
+							continue;
+						double r_ij[] = { coordx[i] - (coordx[j] + dx * LX), coordy[i] - (coordy[j] + dy * LY), coordz[i] - (coordz[j] + dz * LY) };
+						double r_ij_abs = sqrtRecursive(r_ij[0], r_ij[1], r_ij[2]);
+						double F_ij = F(r_ij_abs);
+						Fx[i] += F_ij * r_ij[0] / r_ij_abs;
+						Fy[i] += F_ij * r_ij[1] / r_ij_abs;
+						Fz[i] += F_ij * r_ij[2] / r_ij_abs;
+					}
+				}
 			}
 		}
-		rx12 = coordx[0] - coordx[1];
-		ry12 = coordy[0] - coordy[1];
-		rz12 = coordz[0] - coordz[1];
-		rx21 = coordx[1] - coordx[0];
-		ry21 = coordy[1] - coordy[0];
-		rz21 = coordz[1] - coordz[0];
-		r12_abs = sqrt(rx12 * rx12 + ry12 * ry12 + rz12 * rz12);
-		r21_abs = sqrt(rx21 * rx21 + ry21 * ry21 + rz21 * rz21);
-		m = (SIGMA / r12_abs);
-		m2 = m * m;
-		m4 = m2 * m2;
-		m6 = m4 * m2;
-		m12 = m6 * m6;
-		n = (SIGMA / r21_abs);
-		n2 = n * n;
-		n4 = n2 * n2;
-		n6 = n4 * n2;
-		n12 = n6 * n6;
-		U12 = 4 * EPS * (m12 - m6);
-		U21 = 4 * EPS * (n12 - n6);
-		F12 = ((24 * EPS) / r12_abs) * ((2 * m12) - (m6));
-		F21 = ((24 * EPS) / r21_abs) * ((2 * n12) - (n6));
-		Fx[0] = F12 * rx12 / r12_abs;
-		Fy[0] = F12 * ry12 / r12_abs;
-		Fz[0] = F12 * rz12 / r12_abs;
-		Fx[1] = F21 * rx21 / r21_abs;
-		Fy[1] = F21 * ry21 / r21_abs;
-		Fz[1] = F21 * rz21 / r21_abs;
-		vx[0] = vx[0] + (Fx[0] + Fx_pre[0]) / (2 * MASS) * STEP;
-		vy[0] = vy[0] + (Fy[0] + Fy_pre[0]) / (2 * MASS) * STEP;
-		vz[0] = vz[0] + (Fz[0] + Fz_pre[0]) / (2 * MASS) * STEP;
-		vx[1] = vx[1] + (Fx[1] + Fx_pre[1]) / (2 * MASS) * STEP;
-		vy[1] = vy[1] + (Fy[1] + Fy_pre[1]) / (2 * MASS) * STEP;
-		vz[1] = vz[1] + (Fz[1] + Fz_pre[1]) / (2 * MASS) * STEP;
-		Ekin_sys = 0;
-		for (int i = 0; i < NUMBERPARTICLES; i++) {
-			Ekin[i] = MASS * (pow(vx[i], 2) + pow(vy[i], 2) + pow(vz[i], 2)) / 2;
-			Ekin_sys += Ekin[i];
-		}
-		Epot = (U12 + U21) / 2;
-		E = Ekin_sys + Epot;
-		vm_x = 0;
-		vm_y = 0;
-		vm_z = 0;
-		for (int i = 0; i < NUMBERPARTICLES; i++) {
-			vm_x += vx[i];
-			vm_y += vy[i];
-			vm_z += vz[i];
-		}
-		vm_x /= NUMBERPARTICLES;
-		vm_y /= NUMBERPARTICLES;
-		vm_z /= NUMBERPARTICLES;
-		v_T = 0;
-		for (int i = 0; i < NUMBERPARTICLES; i++) {
-			v_T += pow(vx[i] - vm_x, 2) + pow(vy[i] - vm_y, 2) + pow(vz[i] - vm_z, 2);
-			T = MASS * v_T / (3 * NUMBERPARTICLES * K_B);
-		}	
-		/*Fx[0] = F12 * rx12 / r12_abs;
-		Fy[0] = F12 * ry12 / r12_abs;
-		Fz[0] = F12 * rz12 / r12_abs;
-		Fx[1] = F12 * rx21 / r21_abs;
-		Fy[1] = F12 * ry21 / r21_abs;
-		Fz[1] = F12 * rz21 / r21_abs;
-		Pxx = (MASS / VOLUME) * ((vx[0] - ((vx[0] + vx[1]) / NUMBERPARTICLES)) * (vx[0] - ((vx[0] + vx[1]) / NUMBERPARTICLES)) + (vx[1] - ((vx[0] + vx[1]) / NUMBERPARTICLES)) * (vx[1] - ((vx[0] + vx[1]) / NUMBERPARTICLES))) + (1 / VOLUME) * (rx12 * (Fx[0] - Fx[1]) + rx21 * (Fx[1] - Fx[0]));
-		Pyy = (MASS / VOLUME) * ((vy[0] - ((vy[0] + vy[1]) / NUMBERPARTICLES)) * (vy[0] - ((vy[0] + vy[1]) / NUMBERPARTICLES)) + (vy[1] - ((vy[0] + vy[1]) / NUMBERPARTICLES)) * (vy[1] - ((vy[0] + vy[1]) / NUMBERPARTICLES))) + (1 / VOLUME) * (ry12 * (Fy[0] - Fy[1]) + ry21 * (Fy[1] - Fy[0]));
-		Pzz = (MASS / VOLUME) * ((vz[0] - ((vz[0] + vz[1]) / NUMBERPARTICLES)) * (vz[0] - ((vz[0] + vz[1]) / NUMBERPARTICLES)) + (vz[1] - ((vz[0] + vz[1]) / NUMBERPARTICLES)) * (vz[1] - ((vz[0] + vz[1]) / NUMBERPARTICLES))) + (1 / VOLUME) * (rz12 * (Fz[0] - Fz[1]) + rz21 * (Fz[1] - Fz[0]));
-		P = (Pxx + Pyy + Pzz) / 3;*/
-		fileWrite(i);
-	}
 #pragma endregion	
-}
-
-void fileWrite(int iter = 0) {
-	FILE* filew;
-	errno_t error;
-	error = fopen_s(&filew, "G:\\Vanin_MD_11.txt", "a");
-	if (error != 0)
-	{
-		std::cout << "Error:" + error << std::endl;
 	}
-	else
-	{
-		double Eterm = E_thermal();
-		double P = Pressure();
-		fprintf(filew, "Step = %d\n", iter);
-		//fprintf(filew, "%1.8f %1.8f %1.8f \n", coordx[0] + 0.0, coordy[0] + 0.0, coordz[0] + 0.0);
-		//fprintf(filew, "r2 = (rx2; ry2; rz2) = (%1.8f; %1.8f; %1.8f) \n", coordx[1] + 0.0, coordy[1] + 0.0, coordz[1] + 0.0);
-		//fprintf(filew, "r12_abs = %1.8f \n", r12_abs);
-		fprintf(filew, "Ekin = %1.8f \n", Ekin_sys);
-		fprintf(filew, "Eterm = %1.8f \n", Eterm);
-		fprintf(filew, "Epot = % 1.8f \n", Epot);
-		fprintf(filew, "Eint = %1.8f \n", Eint = Epot + Eterm);
-		fprintf(filew, "E = %1.8f \n", E);
-		fprintf(filew, "T = %1.8f \n", T);
-		fprintf(filew, "P = %1.8f \n", P);
-		fprintf(filew, "\n");
+}
+
+void start_cond_two_particles();
+class Mactoparam { //добавляем класс с макропараметрами, где есть кинетическая, потенциальная, кинетическая тепловая движения энергии
+	double Ek() { //кинетическая энергия
+		double Ek = 0;
+		for (int i = 0; i < NUMBERPARTICLES; ++i) {
+			Ek += recursive(vx[i], vy[i], vz[i]);
+		}
+		Ek = Ek * MASS / 2;
+		return Ek;
 	}
-	fclose(filew);
+
+	double Et() { //кинетическая энергия теплового движения
+		double vCentral[] = { 0, 0, 0 }; //вводим микро-массив для определения центра масс
+		for (int i = 0; i < NUMBERPARTICLES; ++i) {
+			vCentral[0] += vx[i];
+			vCentral[1] += vy[i];
+			vCentral[2] += vz[i];
+		}
+		vCentral[0] /= NUMBERPARTICLES;
+		vCentral[1] /= NUMBERPARTICLES;
+		vCentral[2] /= NUMBERPARTICLES;
+		double Et = 0;
+		for (int i = 0; i < NUMBERPARTICLES; ++i) {
+			Et += recursive(vx[i] - vCentral[0], vy[i] - vCentral[1], vz[i] - vCentral[2]);
+		}
+		Et = Et * MASS / 2; //посчитали сначала всю кинетическую, потом на 2 разделили с целью сохранения минимального количества операций
+		return Et;
+	}
+
+	double Ep() { //потенциальная энергия
+		double Ep = 0;
+		for (int i = 0; i < NUMBERPARTICLES; ++i) {
+			for (int j = 0; j < NUMBERPARTICLES; ++j) {
+				if (i == j) continue;
+				double r_ij[] = { coordx[i] - coordx[j], coordy[i] - coordy[j], coordz[i] - coordz[j] };
+				double r_ij_abs = sqrtRecursive(r_ij[0], r_ij[1], r_ij[2]);
+				Ep += U(r_ij_abs);
+			}
+		}
+		Ep /= 2; //добавим "синтаксического" сахара для деления на 2, а потом присваивания
+		return Ep;
+	}
+
+	double temperatureOfSystem(double Et) { //расчет температуры
+		return (2 * Et) / (3 * NUMBERPARTICLES * K_B);
+	}
+
+	double pressuareOfSystem() { //рассчет давления
+		double v_cetral[] = { 0, 0, 0 }; //опять же ввводим микромассив для центра масс
+		for (int i = 0; i < NUMBERPARTICLES; ++i) {
+			v_cetral[0] += vx[i];
+			v_cetral[1] += vy[i];
+			v_cetral[2] += vz[i];
+		}
+		v_cetral[0] /= NUMBERPARTICLES;
+		v_cetral[1] /= NUMBERPARTICLES;
+		v_cetral[2] /= NUMBERPARTICLES;
+		double pressuareOfSystem = 0;
+		for (int i = 0; i < NUMBERPARTICLES; ++i) {
+			pressuareOfSystem += MASS * recursive(vx[i] - v_cetral[0], vy[i] - v_cetral[1], vz[i] - v_cetral[2]);
+			for (int j = i + 1; j < NUMBERPARTICLES; ++j) {
+				double r_ij[] = { coordx[i] - coordx[j], coordy[i] - coordy[j], coordz[i] - coordz[j] };
+				double r_ij_abs = recursive(r_ij[0], r_ij[1], r_ij[2]);
+				double F_ij = F(r_ij_abs);
+				for (int alpha = 0; alpha < 3; ++alpha) {
+					double F_ij_alpha = F_ij * r_ij[alpha] / r_ij_abs;
+					pressuareOfSystem += r_ij[alpha] * F_ij_alpha;
+				}
+			}
+		}
+		pressuareOfSystem = pressuareOfSystem / (3 * VOLUME);
+		return pressuareOfSystem;
+	}
+};
+
+void writeToFile(FILE* outStream, int iter) {
+	fprintf(outStream, "Step = %d\n", iter);
+	for (int i = 0; i < NUMBERPARTICLES; ++i) {
+		fprintf(outStream, "r%d = (rx%d; ry%d; rz%d) = (%.8f; %.8f; %.8f)\n", i + 1, i + 1, i + 1, i + 1, coordx[i], coordy[i], coordz[i]);
+	}
+	double r12_abs = sqrtRecursive(coordx[0] - coordx[1], coordy[0] - coordy[1], coordz[0] - coordz[1]);
+	fprintf(outStream, "r12_abs = %.8f\n", r12_abs);
+	double U12 = U(r12_abs);
+	fprintf(outStream, "U12 = %.8f\n", U12);
+	double F12 = F(r12_abs);
+	fprintf(outStream, "F12 = %.8f\n", F12+0.0);
+	for (int i = 0; i < 1; ++i) {
+		fprintf(outStream, "F%d = (Fx%d; Fy%d; Fz%d) = (%.8f; %.8f; %.8f)\n", i + 1, i + 1, i + 1, i + 1, Fx[i], Fy[i], Fz[i]);
+	}
+	for (int i = 0; i < NUMBERPARTICLES; ++i) { 
+		fprintf(outStream, "v%d = (vx%d; vy%d; vz%d) = (%.8f; %.8f; %.8f)\n", i + 1, i + 1, i + 1, i + 1, vx[i], vy[i], vz[i]);
+	}
+	fprintf(outStream, "\n"); 
 }
 
-void freeMemory() { //освобождаем память
-	free(coordx);
-	free(coordy);
-	free(coordz);
-	free(vx);
-	free(vy);
-	free(vz);
-	free(Fx);
-	free(Fy);
-	free(Fz);
+void verletAlgorithm() {
+	for (int i = 0; i < NUMBERPARTICLES; ++i) { 
+		coordx[i] += vx[i] * STEP + Fx[i] / (2 * MASS) * (STEP * STEP);
+		coordy[i] += vy[i] * STEP + Fy[i] / (2 * MASS) * (STEP * STEP);
+		coordz[i] += vz[i] * STEP + Fz[i] / (2 * MASS) * (STEP * STEP);
+	}
+	for (int i = 0; i < NUMBERPARTICLES; ++i) { 
+		vx[i] += Fx[i] / (2 * MASS) * STEP;
+		vy[i] += Fy[i] / (2 * MASS) * STEP;
+		vz[i] += Fz[i] / (2 * MASS) * STEP;
+	}
+	LJpotentional(); 
+	for (int i = 0; i < NUMBERPARTICLES; ++i) { 
+		vx[i] += Fx[i] / (2 * MASS) * STEP;
+		vy[i] += Fy[i] / (2 * MASS) * STEP;
+		vz[i] += Fz[i] / (2 * MASS) * STEP;
+	}
 }
 
-void MD() { //создание функции Molecular Dynamics, в которой создается и декларируется экземпляр класса vector, вызывается функция н.у. для 2 частиц, а также проивзодятся манипуляции с памятью	
-	GetMemoryForArrays();
-	start_cond_two_particles();
-	CalculationVectors();
-	ClearMemory();
+void PGU() {
+	for (int i = 0; i < NUMBERPARTICLES; ++i) {
+		if (coordx[i] >= LX) {
+			coordx[i] -= LX;
+		}
+		if (coordy[i] >= LY) {
+			coordy[i] -= LY;
+		} 
+		if (coordz[i] >= LZ) {
+			coordz[i] -= LZ;
+		}
+		if (coordx[i] < 0) {
+			coordx[i] += LX;
+		} 
+		if (coordy[i] < 0) {
+			coordy[i] += LY;
+		} 
+		if (coordz[i] < 0) {
+			coordz[i] += LZ;
+		} 
+	}
 }
 
+void MD() {
+	getMemoryForArrays();
+	FILE* outStream;
+	char FileName[] = "G:\\Vanin_MD_12.txt";
+	outStream = fopen(FileName, "w");
+		start_cond_two_particles(); 
+		LJpotentional(); 
+		writeToFile(outStream, 0);
+		for (int step = 1; step <= LASTSTEP; ++step) {
+			verletAlgorithm();
+			writeToFile(outStream, step);
+		}
+		fclose(outStream);
+		LJpotentional(); 
+		clearMemory(); 
 
-int main()
-{
+}
+
+int main() {
 	MD();
 	return 0;
 }
