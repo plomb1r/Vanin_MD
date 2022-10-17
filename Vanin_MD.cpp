@@ -1,6 +1,6 @@
 ﻿#include <stdio.h> 
 #define _CRT_SECURE_NO_DEPRECATE 
-#define PLOTTING_DATA
+//#define PLOTTING_DATA
 #include <math.h>  
 #include <stdlib.h> 
 #include "params.h"
@@ -47,57 +47,46 @@ void clearMemory() { //освобождаем память
 
 
 double U(double r) {
-	return 4 * EPS * ((pow(SIGMA / r, 10) - pow(SIGMA / r, 6)));
+	return 4 * EPS * ((pow((SIGMA / r), 10) - pow((SIGMA / r), 6)));
 }
 
 double F(double r) {
 	return ((4 * EPS)/(SIGMA)) * (10 * pow((SIGMA / r), 11) - 6 * pow((SIGMA / r), 7));
 }
 
-double recursive(double x, double y, double z) {
+double prepareForLengthOfVector(double x, double y, double z) {
 	return x * x + y * y + z * z;
 }
 
-double sqrtRecursive(double x, double y, double z) {
-	return sqrt(recursive(x, y, z));
+double lengthOfVector(double x, double y, double z) {
+	return sqrt(prepareForLengthOfVector(x, y, z));
 }
 
 
 void LJpotentional() {
-	for (int i = 0; i < NUMBERPARTICLES; ++i) {
-		Fx[i] = 0;
-		Fy[i] = 0;
-		Fz[i] = 0;
-#pragma region Виртуальные частицы Lx/2
-		for (int j = 0; j < NUMBERPARTICLES; ++j) {
+	for (int i = 0; i < NUMBERPARTICLES; ++i)
+	{
+		Fx[i] = Fy[i] = Fz[i] = 0;
+		for (int j = 0; j < NUMBERPARTICLES; ++j)
+		{
 			if (i == j) continue;
 			double r_ij[] = { coordx[i] - coordx[j], coordy[i] - coordy[j], coordz[i] - coordz[j] };
-			if (r_ij[0] < -LX / 2) {
-				r_ij[0] += LX;
-			}
-			if (r_ij[0] >= LX / 2) {
-				r_ij[0] -= LX;
-			}
-			if (r_ij[1] < -LY / 2) {
-				r_ij[1] += LY;
-			}
-			if (r_ij[1] >= LY / 2) {
-				r_ij[1] -= LY;
-			}
-			if (r_ij[2] < -LZ / 2) {
-				r_ij[2] += LZ;
-			}
-			if (r_ij[2] >= LZ / 2) {
-				r_ij[2] -= LZ;
-			}
-			double r_ij_square = recursive(r_ij[0], r_ij[1], r_ij[2]);
+			if (r_ij[0] < -LX / 2) r_ij[0] += LX;
+			if (r_ij[0] >= LX / 2) r_ij[0] -= LX;
+
+			if (r_ij[1] < -LY / 2) r_ij[1] += LY;
+			if (r_ij[1] >= LY / 2) r_ij[1] -= LY;
+
+			if (r_ij[2] < -LZ / 2) r_ij[2] += LZ;
+			if (r_ij[2] >= LZ / 2) r_ij[2] -= LZ;
+
+			double r_ij_square = lengthOfVector(r_ij[0], r_ij[1], r_ij[2]);
 			double F_ij = F(r_ij_square);
 			Fx[i] += F_ij * r_ij[0] / r_ij_square;
 			Fy[i] += F_ij * r_ij[1] / r_ij_square;
 			Fz[i] += F_ij * r_ij[2] / r_ij_square;
 		}
 	}
-#pragma endregion	
 }
 
 void start_cond_two_particles();
@@ -105,7 +94,7 @@ void start_cond_two_particles();
 double Ek() {
 	double Ek = 0;
 	for (int i = 0; i < NUMBERPARTICLES; ++i) {
-		Ek += recursive(vx[i], vy[i], vz[i]);
+		Ek += prepareForLengthOfVector(vx[i], vy[i], vz[i]);
 	}
 	Ek = Ek * MASS / 2;
 	return Ek;
@@ -123,7 +112,7 @@ double Et() {
 	vCentral[2] /= NUMBERPARTICLES;
 	double Et = 0;
 	for (int i = 0; i < NUMBERPARTICLES; ++i) {
-		Et += recursive(vx[i] - vCentral[0], vy[i] - vCentral[1], vz[i] - vCentral[2]);
+		Et += prepareForLengthOfVector(vx[i] - vCentral[0], vy[i] - vCentral[1], vz[i] - vCentral[2]);
 	}
 	Et = Et * MASS / 2;
 	return Et;
@@ -135,7 +124,7 @@ double Ep() {
 		for (int j = 0; j < NUMBERPARTICLES; ++j) {
 			if (i == j) continue;
 			double r_ij[] = { coordx[i] - coordx[j], coordy[i] - coordy[j], coordz[i] - coordz[j] };
-			double r_ij_abs = sqrtRecursive(r_ij[0], r_ij[1], r_ij[2]);
+			double r_ij_abs = lengthOfVector(r_ij[0], r_ij[1], r_ij[2]);
 			Ep += U(r_ij_abs);
 		}
 	}
@@ -148,84 +137,83 @@ double temperatureOfSystem(double Et) {
 }
 
 double pressuareOfSystem() {
-	double v_cetral[] = { 0, 0, 0 };
+	double central[] = { 0, 0, 0 };
 	for (int i = 0; i < NUMBERPARTICLES; ++i) {
-		v_cetral[0] += vx[i];
-		v_cetral[1] += vy[i];
-		v_cetral[2] += vz[i];
+		central[0] += vx[i];
+		central[1] += vy[i];
+		central[2] += vz[i];
 	}
-	v_cetral[0] /= NUMBERPARTICLES;
-	v_cetral[1] /= NUMBERPARTICLES;
-	v_cetral[2] /= NUMBERPARTICLES;
-	double pressuareOfSystem = 0;
+	central[0] /= NUMBERPARTICLES;
+	central[1] /= NUMBERPARTICLES;
+	central[2] /= NUMBERPARTICLES;
+	double P = 0;
 	for (int i = 0; i < NUMBERPARTICLES; ++i) {
-		pressuareOfSystem += MASS * recursive(vx[i] - v_cetral[0], vy[i] - v_cetral[1], vz[i] - v_cetral[2]);
-		for (int j = i + 1; j < NUMBERPARTICLES; ++j) {
-			double r_ij[] = { coordx[i] - coordx[j], coordy[i] - coordy[j], coordz[i] - coordz[j] };
-			double r_ij_square = recursive(r_ij[0], r_ij[1], r_ij[2]);
-			double F_ij = F(r_ij_square);
-			for (int alpha = 0; alpha < 3; ++alpha)
-			{
-				double F_ij_alpha = F_ij * r_ij[alpha] / r_ij_square;
-				pressuareOfSystem += r_ij[alpha] * F_ij_alpha;
+		P += MASS * prepareForLengthOfVector(vx[i] - central[0], vy[i] - central[1], vz[i] - central[2]);
+	}
+	for (int i = 0; i < NUMBERPARTICLES; ++i) {
+		for (int j = 0; j < NUMBERPARTICLES; ++j) {
+			for (int dx = -1; dx <= 1; ++dx) {
+				for (int dy = -1; dy <= 1; ++dy) {
+					for (int dz = -1; dz <= 1; ++dz) {
+						if (i == j && dx == 0 && dy == 0 && dz == 0)
+							continue;
+						double r_ij[] = {
+							coordx[i] - (coordx[j] + dx * LX),
+							coordy[i] - (coordy[j] + dy * LY),
+							coordz[i] - (coordz[j] + dz * LY)
+						};
+						double r_ij_abs = lengthOfVector(r_ij[0], r_ij[1], r_ij[2]);
+						double F_ij = F(r_ij_abs);
+						P += r_ij_abs * F_ij / 2;
+					}
+				}
 			}
 		}
 	}
-	pressuareOfSystem = pressuareOfSystem / (3 * VOLUME);
-	return pressuareOfSystem;
+	P = P / (3 * VOLUME);
+	return P;
 }
 
 
 void writeToFile(FILE* outStream, int iter) {
 #if defined(PLOTTING_DATA)
-	fprintf(outStream, "%d, %.8f, %.8f, %.8f, %.8f \n", iter, coordx[0], coordy[0], coordx[1], coordy[1]);
+	// outputing only data for plotting
+	fprintf(outStream, "%d, %.8f, %.8f, %.8f, %.8f, ", iter, coordx[0], coordy[0], coordx[1], coordy[1]);
+	fprintf(outStream, "\n");
+
 #else
 	fprintf(outStream, "Step = %d\n", iter);
-
 	for (int i = 0; i < NUMBERPARTICLES; ++i) {
 		fprintf(outStream, "r%d = (rx%d; ry%d; rz%d) = (%.8f; %.8f; %.8f)\n", i + 1, i + 1, i + 1, i + 1, coordx[i], coordy[i], coordz[i]);
 	}
-
 	double r12[] = { coordx[0] - coordx[1], coordy[0] - coordy[1], coordz[0] - coordz[1] };
-
-	double r12_abs = sqrtRecursive(r12[0], r12[1], r12[2]);
-	double r12_square = recursive(r12[0], r12[1], r12[2]);
+	double r12_abs = lengthOfVector(r12[0], r12[1], r12[2]);
+	double r12_square = prepareForLengthOfVector(r12[0], r12[1], r12[2]);
 	fprintf(outStream, "r12_abs = %.8f\n", r12_abs);
-
-	double U12 = U(r12_square);
+	double U12 = U(r12_abs);
 	fprintf(outStream, "U12 = %.8f\n", U12);
-
-	double F12 = F(r12_square) / r12_abs;
+	double F12 = F(r12_abs);
 	fprintf(outStream, "F12 = %.8f\n", F12);
-
 	for (int i = 0; i < 1; ++i) {
 		fprintf(outStream, "F%d = (Fx%d; Fy%d; Fz%d) = (%.8f; %.8f; %.8f)\n", i + 1, i + 1, i + 1, i + 1, Fx[i], Fy[i], Fz[i]);
 	}
-
 	for (int i = 0; i < NUMBERPARTICLES; ++i) {
 		fprintf(outStream, "v%d = (vx%d; vy%d; vz%d) = (%.8f; %.8f; %.8f)\n", i + 1, i + 1, i + 1, i + 1, vx[i], vy[i], vz[i]);
-	}
+	} 
 	double Ekin = Ek();
-	fprintf(outStream, "%.8f\n", Ekin);
-
+	fprintf(outStream, "Ekin = %.8f\n", Ekin);
 	double Eterm = Et();
 	fprintf(outStream, "Eterm = %.8f\n", Eterm);
-
 	double Epot = Ep();
-	fprintf(outStream, "%.8f\n", Epot);
-
+	fprintf(outStream, "Epot = %.8f\n", Epot);
 	double Ein = Eterm + Epot;
 	fprintf(outStream, "Eint = %.8f\n", Ein);
-
 	double E = Ekin + Epot;
-	fprintf(outStream, "%.8f\n", E);
-
+	fprintf(outStream, "E = %.8f\n", E);
 	double T = temperatureOfSystem(Eterm);
-	fprintf(outStream, "%.8f\n", T);
-
+	fprintf(outStream, "T = %.8f\n", T);
 	double P = pressuareOfSystem();
-	fprintf(outStream, "%.8f\n", P);
-
+	fprintf(outStream, "P = %.8f\n", P);
 	fprintf(outStream, "\n");
 #endif
 }
